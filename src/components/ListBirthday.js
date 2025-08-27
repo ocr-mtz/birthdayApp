@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, ScrollView } from 'react-native';
+import { StyleSheet, View, ScrollView, Alert } from 'react-native';
 import AddBirthday from './AddBirthday';
 import ActionBar from './ActionBar';
 import Birthday from './Birthday';
 import { db } from '../utils/firebase';
-import { collection, getDocs, orderBy } from 'firebase/firestore';
+import { collection, getDocs, orderBy, deleteDoc, doc } from 'firebase/firestore';
 import { format, differenceInDays } from 'date-fns';
 
 export default function ListBirthday(props) {
@@ -40,7 +40,7 @@ export default function ListBirthday(props) {
             const currentYear = format(new Date(), 'yyyy');
             const dateTemp = itemTemp.dateBirth.split('-');
             itemTemp.dateBirth = `${currentYear}-${dateTemp[1]}-${dateTemp[2]}`;
-            itemTemp.days = differenceInDays(itemTemp.dateBirth, currentDay);
+            itemTemp.days = differenceInDays(currentDay, itemTemp.dateBirth);
             if (itemTemp.days < 1) {
                 birthdayTempArray.push(itemTemp);
             } else {
@@ -51,17 +51,39 @@ export default function ListBirthday(props) {
         setPastBirthday(pasatBirthdayTempArray);
     };
 
+    const deleteBirthday = (birthdayParam) => {
+        Alert.alert(
+            'Eliminar Cumpleaños',
+            `¿Estas seguro de eliminar el cumpleaños de ${birthdayParam.name} ${birthdayParam.lastname}?`,
+            [
+                {
+                    text: 'Cancelar',
+                    style: 'cancel',
+                },
+                {
+                    text: 'Eliminar',
+                    onPress: () => {
+                        const docItem = deleteDoc(doc(db, userlogged.uid, birthdayParam.id));
+                        docItem.then(() => {
+                            setReloadData(true);
+                        });
+                        console.log('OK');
+                    },
+                },
+            ],
+            {cancelable: false}
+        );
+    };
+
     return(
         <View style = { styles.container }>
             { showList ? (
                 <ScrollView style = { styles.scrollView }>
-                    <Text>Birthday</Text>
                     {birthday.map((item, index) => (
-                        <Birthday key = { index } birthday = { item }/>
+                        <Birthday key = { index } birthday = { item } deleteBirthday = { deleteBirthday }/>
                     ))}
-                    <Text>PastBirthday</Text>
                     {pastBirthday.map((item, index) => (
-                        <Birthday key = { index } birthday = { item }/>
+                        <Birthday key = { index } birthday = { item } deleteBirthday = { deleteBirthday }/>
                     ))}
                 </ScrollView>
             ) : (
