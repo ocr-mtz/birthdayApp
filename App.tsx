@@ -10,26 +10,33 @@ import { auth } from './src/utils/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import AuthView from './src/components/Auth';
 import ListBirthday from './src/components/ListBirthday';
+import { encode, decode } from 'base-64';
+
+if (!global.btoa) global.btoa = encode;
+if (!global.atob) global.atob = decode;
 
 function App() {
-  const [user, setUser] = useState('');
+  const [user, setUser] = useState<User | null>(null);
+  console.log(user?.uid);
 
   useEffect(() => {
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setUser('Estas logeado');
+    onAuthStateChanged(auth, (response) => {
+      if (response) {
+        setUser(response);
       } else {
-        setUser('');
+        setUser(null);
       }
     });
   }, []);
+
+  if (user === undefined) return null;
 
   return (
     <View>
       <StatusBar barStyle={'light-content'} />
       <SafeAreaView style = { styles.background }>
         <View>
-          { user ? <ListBirthday /> : <AuthView />}
+          { user ? <ListBirthday userlogged = { user }/> : <AuthView />}
         </View>
       </SafeAreaView>
     </View>
@@ -44,3 +51,12 @@ const styles = StyleSheet.create({
 });
 
 export default App;
+
+interface User {
+  displayName: string | null;
+  email: string | null;
+  phoneNumber: string | null;
+  photoURL: string | null;
+  providerId: string;
+  uid: string;
+}
